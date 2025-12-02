@@ -283,7 +283,7 @@ func parseArgs(args []string, presetRunID string, presetRunSeed []byte) (RunCont
 		return ctx, nil
 	}
 	if len(rest) == 0 || rest[0] == "" {
-		return RunContext{}, fmt.Errorf("usage: xdl [-q|-d] [-c cookies.json] <username> [more_usernames...] or xdl -C cookies.json")
+		return RunContext{}, fmt.Errorf("usage: xdl [-q|-d] [-c cookies.json] <username> [more_usernames...] or xdl -C cookies.json (defaults to config/cookies.json when -c is omitted)")
 	}
 	users := make([]string, 0, len(rest))
 	for _, u := range rest {
@@ -296,7 +296,7 @@ func parseArgs(args []string, presetRunID string, presetRunSeed []byte) (RunCont
 		users = append(users, u)
 	}
 	if len(users) == 0 {
-		return RunContext{}, fmt.Errorf("usage: xdl [-q|-d] [-c cookies.json] <username> [more_usernames...] or xdl -C cookies.json")
+		return RunContext{}, fmt.Errorf("usage: xdl [-q|-d] [-c cookies.json] <username> [more_usernames...] or xdl -C cookies.json (defaults to config/cookies.json when -c is omitted)")
 	}
 	ctx := RunContext{
 		Users:             users,
@@ -404,6 +404,14 @@ func runWithContext(rctx RunContext) error {
 			return nil
 		}
 	}
+
+	if rctx.CookiePath == "" {
+		defaultCookiePath := filepath.Join("config", "cookies.json")
+		if _, err := os.Stat(defaultCookiePath); err == nil {
+			rctx.CookiePath = defaultCookiePath
+		}
+	}
+
 	if rctx.CookiePath != "" {
 		if err := config.ApplyCookiesFromFile(conf, rctx.CookiePath); err != nil {
 			if rctx.Mode == ModeVerbose {
