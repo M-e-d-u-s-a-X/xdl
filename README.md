@@ -1,4 +1,5 @@
 # xdl – X (Twitter) Media Downloader & Scraper (CLI)
+Keywords: twitter media downloader, x scraper, twitter image downloader, twitter video downloader, cli, golang.
 
 `xdl` is a simple, fast, **local** tool that downloads **all images and videos** from any public X (Twitter) profile.  
 Everything runs directly on your machine.
@@ -37,7 +38,7 @@ config/cookies.json
 Requires **Go 1.21+**
 
 ```bash
-git clone https://gitlab.com/lawlessmedusax/xdl
+git clone https://gitlab.com/medusax/xdl
 cd xdl
 go build -o xdl ./cmd/xdl       # Linux / macOS
 go build -o xdl.exe ./cmd/xdl   # Windows
