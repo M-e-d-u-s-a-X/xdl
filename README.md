@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # xdl – X (Twitter) Media Downloader & Scraper (CLI)  
 
 `xdl` is a simple, fast, **local** tool that downloads **images and videos** from any public X (Twitter) profile. Everything runs directly on your machine.
@@ -12,15 +13,41 @@
 - 100% **local**  
 - Cross-platform: Windows, Linux, macOS  
 - Fast CLI workflow with minimal configuration
+=======
+# xdl – X (Twitter) Media Downloader & Scraper (CLI)
+
+Keywords: twitter media downloader, x scraper, twitter image downloader, twitter video downloader, cli, golang.
+
+[![Go Version](https://img.shields.io/badge/go-1.21%2B-00ADD8.svg)](https://go.dev/)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-success.svg)](#license)
+
+`xdl` is a **local-first** CLI tool for downloading **images and videos** from X (Twitter) profiles that your logged-in session can see.  
+No hosted API, no accounts, no telemetry — everything runs on your machine.
+
+> 🛈 xdl **intentionally trades raw speed for quality**.  
+> It always prefers **HQ (high quality) media variants** and uses a more careful request pattern, so downloads may feel slower by design.
 
 ---
 
-## Configuration
+## ⭐ Highlights
 
-### Cookies (required)
+- **High-quality media first** – always aims for the best available image/video variants.
+- **Local-only** – runs entirely on your machine, no remote processing.
+- **Uses your existing login** – if your browser session can see it, `xdl` can too.
+- **Cross-platform** – Windows, Linux, macOS.
+- **Simple CLI flow** – one binary, one command, minimal setup.
+>>>>>>> d6e1a42 (fix bug, improve readme, new behavior)
 
-Use the **Cookie-Editor** browser extension while logged into `https://x.com`.
+---
 
+## 🚀 Quick Start
+
+### 1. Install Go
+
+Requires **Go 1.21+**  
+Download from: https://go.dev/dl/
+
+<<<<<<< HEAD
 1. Open Cookie-Editor  
 2. Click **Export → Export as JSON**  
 3. Save the result to:
@@ -34,6 +61,9 @@ config/cookies.json
 ## Installation
 
 Requires **Go 1.21+**
+=======
+### 2. Clone & build
+>>>>>>> d6e1a42 (fix bug, improve readme, new behavior)
 
 ```bash
 # Clone one of the repositories:
@@ -45,13 +75,32 @@ git clone https://gitlab.com/medusax/xdl           # GitLab (mirror)
 cd xdl
 
 # Build
+<<<<<<< HEAD
 go build ./cmd/xdl       # Linux / macOS
 go build ./cmd/xdl   # Windows
+=======
+go build -o xdl ./cmd/xdl       # Linux / macOS
+go build -o xdl.exe ./cmd/xdl   # Windows
+>>>>>>> d6e1a42 (fix bug, improve readme, new behavior)
 ```
 
----
+### 3. Export your cookies
 
-## Usage
+`xdl` uses your existing X login from the browser.
+
+1. Install the **Cookie-Editor** extension.
+2. Log into `https://x.com` in your browser.
+3. Open Cookie-Editor.
+4. Click **Export → Export as JSON**.
+5. Save the file as:
+
+```text
+config/cookies.json
+```
+
+The file is read locally by `xdl` and is not sent anywhere else.
+
+### 4. Run
 
 ```bash or powershell (using .exe)
 xdl USERNAME
@@ -66,8 +115,9 @@ xdl.exe google
 
 ---
 
-## Output Structure
+## 📁 Output Layout
 
+<<<<<<< HEAD
 ```text
 debug
 logs
@@ -95,32 +145,92 @@ internal/
 LICENSE  
 README.md  
 ```
+=======
+By default, `xdl` saves files like this:
+
+```text
+exports/
+  USERNAME/
+    images/
+    videos/
+logs/
+debug/
+debug_raw/
+```
+
+- `exports/USERNAME/images/` – downloaded images  
+- `exports/USERNAME/videos/` – downloaded videos  
+- `logs/` and `debug*/` – extra information that can help with troubleshooting
+>>>>>>> d6e1a42 (fix bug, improve readme, new behavior)
 
 ---
 
-## Privacy
+## 🐢 About speed & HQ mode
+
+`xdl` is not trying to be the fastest possible downloader.  
+It is designed around a few priorities:
+
+- **Best available quality over “good enough”**  
+- **Stable behavior over short bursts of speed**  
+- **Friendlier request patterns over aggressive scraping**
+
+In practice, this means:
+
+- It may take more time per profile compared to brute-force tools.
+- It is more deliberate when fetching and saving media.
+- The default behavior is tuned around quality, not benchmarks.
+
+If downloads feel slower than expected, that’s usually a **conscious trade-off**, not a performance bug.
+
+---
+
+## 📉 Limits imposed by X
+
+`xdl` can only download media that X itself exposes to a logged-in user:
+
+- If the **Media** tab on the site stops loading older posts, `xdl` will also stop seeing new media.
+- Some profiles will only expose a portion of their full historical content through the normal web interface.
+
+In other words:
+
+> If your browser cannot see more media when you scroll to the bottom, `xdl` will not magically find more either.
+
+This is a limitation of the platform, not of the tool.
+
+---
+
+## 🔐 Privacy
 
 - No telemetry  
 - No analytics  
 - No external services  
-- All scraping happens locally
+
+Network traffic is only between **your machine and X**, using your cookies.  
+Everything else happens locally.
 
 ---
 
 ## ⚖️ Legal
 
-For educational and personal use.  
-You are responsible for complying with X’s Terms of Service and local laws.
+This project is intended for **educational and personal use**.
+
+You are responsible for:
+
+- Respecting X’s Terms of Service  
+- Respecting copyrights and local laws  
+- Only downloading content you are allowed to access and store  
+
+The authors and contributors are **not** responsible for misuse.
 
 ---
 
-## Media Limitations on X
+## 🤝 Contributing
 
-`xdl` downloads **all media that your logged-in X session can see** in the **Media** tab of a profile.
+Suggestions, issues, and pull requests are welcome.
 
-X applies internal timeline limits — both in the UI and in the underlying GraphQL endpoints.  
-This means that, for many profiles, **only a portion of the full historical media** is exposed through the official web client. After a certain depth, the backend simply **stops returning new pages**, even if the profile contains older posts.
+When reporting a problem, it helps to include:
 
+<<<<<<< HEAD
 **Note on HQ mode:** `xdl` now always runs in HQ (high quality) mode, prioritizing the best available media variants over raw speed. As a result, downloads may feel slower, since the tool performs extra checks and uses more cautious, human-like request pacing and batching to stay friendly to the underlying platform.
 
 `xdl` mirrors this exact behavior:
@@ -133,14 +243,33 @@ This is **not** a bug in `xdl` — it’s a structural limitation of the X web c
 
 If X’s UI does not load more media when you scroll to the bottom of the **Media** tab,  
 `xdl` will not receive more media either.
+=======
+- OS (Windows / Linux / macOS)
+- Go version
+- Command you ran (`xdl ...`)
+- A short description of what happened
+- Relevant snippets from `logs/` (you can redact usernames/paths)
+>>>>>>> d6e1a42 (fix bug, improve readme, new behavior)
 
 ---
 
-## License
+## 📜 License
 
-AGPL-3.0  
-Fork, study, modify, contribute.
+**AGPL-3.0**
+
+You can:
+
+- Fork  
+- Study  
+- Modify  
+- Contribute  
+
+as long as you follow the terms of the AGPL-3.0 license.
 
 ---
 
+<<<<<<< HEAD
 ### xdl — practical, searchable, local-first media downloader
+=======
+### xdl — local-first, quality-focused media downloader for X.
+>>>>>>> d6e1a42 (fix bug, improve readme, new behavior)

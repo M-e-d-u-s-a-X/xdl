@@ -31,12 +31,10 @@ func FetchUserID(cl *http.Client, cf *config.EssentialsConfig, usr string) (stri
 	if usr == "" {
 		return "", errors.New("empty username")
 	}
-
 	ep, err := cf.GraphQLURL("user_by_screen_name")
 	if err != nil {
 		return "", err
 	}
-
 	vj, _ := json.Marshal(map[string]string{"screen_name": usr})
 	fj, _ := cf.FeatureJSONFor("user_by_screen_name")
 	ref := strings.TrimRight(cf.X.Network, "/") + "/" + usr
@@ -54,6 +52,7 @@ func FetchUserID(cl *http.Client, cf *config.EssentialsConfig, usr string) (stri
 		MaxBytes: 2 << 20,
 		Decode:   true,
 	})
+
 	if err != nil {
 		if cf.Runtime.DebugEnabled {
 			p, _ := utils.SaveTimestamped(cf.Paths.Debug, "err_user_by_screen_name", "json", b)

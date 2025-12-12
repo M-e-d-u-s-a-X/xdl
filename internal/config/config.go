@@ -1,7 +1,9 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -135,9 +137,6 @@ func (c *EssentialsConfig) FeatureJSONFor(key string) (string, error) {
 		return "{}", nil
 	}
 	src := c.featureSource(key)
-	if src == nil {
-		return "{}", nil
-	}
 	data, err := json.Marshal(src)
 	if err != nil {
 		return "{}", err
@@ -151,6 +150,43 @@ func (c *EssentialsConfig) featureSource(key string) any {
 		return c.Features.User
 	case "user_media":
 		return c.Features.Media
+	case "tweet_detail":
+		return map[string]bool{
+			"rweb_video_screen_enabled":                                               false,
+			"profile_label_improvements_pcf_label_in_post_enabled":                    true,
+			"responsive_web_profile_redirect_enabled":                                 false,
+			"rweb_tipjar_consumption_enabled":                                         false,
+			"verified_phone_label_enabled":                                            false,
+			"creator_subscriptions_tweet_preview_api_enabled":                         true,
+			"responsive_web_graphql_timeline_navigation_enabled":                      true,
+			"responsive_web_graphql_skip_user_profile_image_extensions_enabled":       false,
+			"premium_content_api_read_enabled":                                        false,
+			"communities_web_enable_tweet_community_results_fetch":                    true,
+			"c9s_tweet_anatomy_moderator_badge_enabled":                               true,
+			"responsive_web_grok_analyze_button_fetch_trends_enabled":                 false,
+			"responsive_web_grok_analyze_post_followups_enabled":                      true,
+			"responsive_web_jetfuel_frame":                                            true,
+			"responsive_web_grok_share_attachment_enabled":                            true,
+			"articles_preview_enabled":                                                true,
+			"responsive_web_edit_tweet_api_enabled":                                   true,
+			"graphql_is_translatable_rweb_tweet_is_translatable_enabled":              true,
+			"view_counts_everywhere_api_enabled":                                      true,
+			"longform_notetweets_consumption_enabled":                                 true,
+			"responsive_web_twitter_article_tweet_consumption_enabled":                true,
+			"tweet_awards_web_tipping_enabled":                                        false,
+			"responsive_web_grok_show_grok_translated_post":                           false,
+			"responsive_web_grok_analysis_button_from_backend":                        true,
+			"creator_subscriptions_quote_tweet_preview_enabled":                       false,
+			"freedom_of_speech_not_reach_fetch_enabled":                               true,
+			"standardized_nudges_misinfo":                                             true,
+			"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": true,
+			"longform_notetweets_rich_text_read_enabled":                              true,
+			"longform_notetweets_inline_media_enabled":                                true,
+			"responsive_web_grok_image_annotation_enabled":                            true,
+			"responsive_web_grok_imagine_annotation_enabled":                          true,
+			"responsive_web_grok_community_note_auto_translation_is_enabled":          false,
+			"responsive_web_enhance_cards_enabled":                                    false,
+		}
 	default:
 		return c.Features.User
 	}
@@ -228,31 +264,94 @@ type BrowserCookie struct {
 	Secure bool   `json:"secure"`
 }
 
+var ErrCookieFileMissing = errors.New("cookie file missing")
+
+func (c *EssentialsConfig) ValidateRequiredCookies(cookiePath string) error {
+	if c == nil {
+		return fmt.Errorf("nil config")
+
+	}
+	missing := make([]string, 0, 2)
+	if strings.TrimSpace(c.Auth.Cookies.AuthToken) == "" {
+		missing = append(missing, "auth_token")
+	}
+	if strings.TrimSpace(c.Auth.Cookies.Ct0) == "" {
+		missing = append(missing, "ct0")
+	}
+
+	if len(missing) == 0 {
+		return nil
+	}
+
+	p := strings.TrimSpace(cookiePath)
+	if p == "" {
+		p = "config/cookies.json"
+	}
+
+	return fmt.Errorf(
+		"%w: MISSING COOKIES: %s. Cookies are REQUIRED to use X endpoints.\nFix: login to x.com in your browser, export cookies as JSON (Cookie-Editor), save to %q, then run again.",
+		ErrCookieFileMissing,
+		strings.Join(missing, ", "),
+		p,
+	)
+}
+
 func ApplyCookiesFromFile(cfg *EssentialsConfig, path string) error {
 	if cfg == nil {
 		return fmt.Errorf("nil config")
 	}
-	if strings.TrimSpace(path) == "" {
-		return nil
+
+	path = strings.TrimSpace(path)
+	if path == "" {
+		path = "config/cookies.json"
 	}
+
 	cookies, err := loadBrowserCookies(path)
 	if err != nil {
+		if errors.Is(err, ErrCookieFileMissing) {
+			return fmt.Errorf(
+				"%w: MISSING COOKIES: cookie file not found or empty at %q.\nFix: login to x.com, export cookies as JSON (Cookie-Editor), save to %q, then run again.",
+				ErrCookieFileMissing,
+				path,
+				path,
+			)
+		}
 		return err
 	}
+
 	cfg.applyBrowserCookies(cookies)
-	return nil
+
+	if err := cfg.ValidateRequiredCookies(path); err != nil {
+		return err
+	}
+
+	return err
 }
 
 func loadBrowserCookies(path string) ([]BrowserCookie, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read cookie file: %w", err)
+		if os.IsNotExist(err) {
+			return nil, ErrCookieFileMissing
+		}
+		return nil, fmt.Errorf("failed to read cookie file %q: %w", path, err)
 	}
+
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 {
+		return nil, ErrCookieFileMissing
+	}
+
 	var cookies []BrowserCookie
 	if err := json.Unmarshal(data, &cookies); err != nil {
-		return nil, fmt.Errorf("failed to parse cookie file: %w", err)
+		return nil, fmt.Errorf("failed to parse cookie file %q: %w", path, err)
 	}
-	return cookies, nil
+
+	if len(cookies) == 0 {
+		return nil, ErrCookieFileMissing
+	}
+
+	return cookies, err
 }
 
 func (c *EssentialsConfig) applyBrowserCookies(cookies []BrowserCookie) {
@@ -297,7 +396,7 @@ func SaveEssentials(cfg *EssentialsConfig, path string) error {
 	if err := writeEssentialsAtomically(path, data); err != nil {
 		return err
 	}
-	return nil
+	return err
 }
 
 func ensureEssentialsDir(path string) error {

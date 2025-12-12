@@ -41,7 +41,6 @@ func WalkUserMediaPages(
 		return errors.New("empty userID")
 	}
 
-	// Local helper: tries to find "media_count" anywhere in the JSON.
 	extractCount := func(b []byte) int {
 		var root any
 		if err := json.Unmarshal(b, &root); err != nil {
@@ -95,7 +94,6 @@ func WalkUserMediaPages(
 	seenCursors := make(map[string]struct{}, 256)
 	seenCursors[""] = struct{}{}
 
-	// Global dedupe of media URLs across all pages.
 	seenMedia := make(map[string]struct{}, 1024)
 
 	ic := 0
@@ -105,9 +103,12 @@ func WalkUserMediaPages(
 
 	end := ""
 
-	// Total media reported by the server (media_count), when available.
 	totalExpected := -1
-	printedScan := false
+
+	frames := []rune{'|', '/', '-', '\\'}
+	lastScanPct := -1
+	lastScanTotal := -1
+	lastScanReq := 0
 
 	for {
 		ri++
@@ -175,7 +176,6 @@ func WalkUserMediaPages(
 			log.LogInfo("media", fmt.Sprintf("saved UserMedia page %d to %s", pg, p))
 		}
 
-		// Try to read media_count once, from the first successful page.
 		if totalExpected < 0 {
 			if cnt := extractCount(b); cnt > 0 {
 				totalExpected = cnt
@@ -199,7 +199,6 @@ func WalkUserMediaPages(
 			break
 		}
 
-		// Keep only new media for this page (global dedupe by URL).
 		pageBatch := make([]Media, 0, len(pms))
 		for _, m := range pms {
 			if m.URL == "" {
@@ -223,40 +222,49 @@ func WalkUserMediaPages(
 			log.LogInfo("media", fmt.Sprintf("page %d: +%d (total %d)", pg, delta, total))
 		}
 
-		// Verbose scan progress (single user): one line with bar + percent when possible.
 		if vb {
-			line := ""
+			spin := frames[(ri-1)%len(frames)]
+
 			if totalExpected > 0 {
-				f := float64(total) / float64(totalExpected)
-				if f < 0 {
-					f = 0
+				frac := float64(total) / float64(totalExpected)
+				if frac < 0 {
+					frac = 0
 				}
-				if f > 1 {
-					f = 1
+				if frac > 1 {
+					frac = 1
 				}
-				bar := buildScanProgressBar(30, f)
-				pct := f * 100.0
-				line = fmt.Sprintf(
-					"xdl ▸ [scan] @%s [page:%d] %s %3.0f%% (%d/%d)",
-					sn,
-					pg,
-					bar,
-					pct,
-					total,
-					totalExpected,
-				)
+
+				pct := int(frac*100.0 + 0.5)
+				if pct < 0 {
+					pct = 0
+				}
+				if pct > 100 {
+					pct = 100
+				}
+
+				if pct != lastScanPct || (ri-lastScanReq) >= 10 {
+					lastScanPct = pct
+					lastScanTotal = total
+					lastScanReq = ri
+
+					bar := buildScanProgressBar(24, frac)
+
+					fmt.Printf(
+						"scanning media for target @%s [%c] [%s] %3d%% eos:%d (total:%d/%d img:%d vid:%d page:%d)\n",
+						sn, spin, bar, pct, ri, total, totalExpected, ic, vc, pg,
+					)
+				}
 			} else {
-				line = fmt.Sprintf(
-					"xdl ▸ [scan] @%s [page:%d] images:%d videos:%d (total:%d)",
-					sn,
-					pg,
-					ic,
-					vc,
-					total,
-				)
+				if total != lastScanTotal || (ri-lastScanReq) >= 10 {
+					lastScanTotal = total
+					lastScanReq = ri
+
+					fmt.Printf(
+						"scanning media for target @%s [%c] eos:%d (total:%d img:%d vid:%d page:%d)\n",
+						sn, spin, ri, total, ic, vc, pg,
+					)
+				}
 			}
-			fmt.Printf("\r\033[2K%s", line)
-			printedScan = true
 		}
 
 		if handler != nil && len(pageBatch) > 0 {
@@ -298,11 +306,6 @@ func WalkUserMediaPages(
 
 		cur = nx
 		pg++
-	}
-
-	if vb && printedScan {
-		// Finish the scan line before download progress prints more things.
-		fmt.Print("\n")
 	}
 
 	if end == "no_progress" || end == "no_next_cursor" || end == "repeat_cursor" || end == "max_pages" {

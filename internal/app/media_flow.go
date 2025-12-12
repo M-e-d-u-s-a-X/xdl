@@ -209,7 +209,6 @@ func scanAndDownloadUserMedia(
 
 	handler := func(page int, cursor string, medias []scraper.Media) error {
 		_ = cursor
-
 		if globalControl.ShouldQuit() {
 			return fmt.Errorf("aborted by user")
 		}

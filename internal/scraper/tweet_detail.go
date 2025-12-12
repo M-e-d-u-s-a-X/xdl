@@ -35,16 +35,23 @@ type tweetDetailResponse struct {
 	} `json:"data"`
 }
 
+type tweetLegacy struct {
+	Entities struct {
+		Media []legacyMedia `json:"media"`
+	} `json:"entities"`
+	ExtendedEntities struct {
+		Media []legacyMedia `json:"media"`
+	} `json:"extended_entities"`
+}
+
 type tweetResult struct {
-	RestID string `json:"rest_id"`
-	Legacy struct {
-		Entities struct {
-			Media []legacyMedia `json:"media"`
-		} `json:"entities"`
-		ExtendedEntities struct {
-			Media []legacyMedia `json:"media"`
-		} `json:"extended_entities"`
-	} `json:"legacy"`
+	RestID string      `json:"rest_id"`
+	Legacy tweetLegacy `json:"legacy"`
+	// Para casos "__typename": "TweetWithVisibilityResults"
+	Tweet *struct {
+		RestID string      `json:"rest_id"`
+		Legacy tweetLegacy `json:"legacy"`
+	} `json:"tweet"`
 }
 
 type legacyMedia struct {
@@ -101,9 +108,14 @@ func GetHighQualityMediaForTweet(
 		return nil, fmt.Errorf("marshal variables: %w", err)
 	}
 
+	featuresJSON, err := cf.FeatureJSONFor("tweet_detail")
+	if err != nil {
+		return nil, fmt.Errorf("build features for tweet_detail: %w", err)
+	}
+
 	q := url.Values{}
 	q.Set("variables", string(varsJSON))
-	q.Set("features", "{}")
+	q.Set("features", featuresJSON)
 	q.Set("fieldToggles", "{}")
 
 	u, err := url.Parse(base)
@@ -117,8 +129,14 @@ func GetHighQualityMediaForTweet(
 		return nil, fmt.Errorf("build TweetDetail request: %w", err)
 	}
 
+	// >>> correção do bug de auth:
+	ref := strings.TrimRight(cf.X.Network, "/") + "/i/status/" + tweetID
+	cf.BuildRequestHeaders(req, ref)
+	req.Header.Set("Accept", "application/json, */*;q=0.1")
+
 	reqStart := time.Now()
 	resp, err := cl.Do(req)
+
 	reqDur := time.Since(reqStart)
 	if err != nil {
 		if true {
@@ -179,6 +197,15 @@ func extractBestMediaFromTweet(tr *tweetResult) []Media {
 		return nil
 	}
 
+	legacy := tr.Legacy
+
+	if tr.Tweet != nil {
+		if len(tr.Tweet.Legacy.ExtendedEntities.Media) > 0 ||
+			len(tr.Tweet.Legacy.Entities.Media) > 0 {
+			legacy = tr.Tweet.Legacy
+		}
+	}
+
 	seen := make(map[string]struct{}, 8)
 	var out []Media
 
@@ -217,8 +244,10 @@ func extractBestMediaFromTweet(tr *tweetResult) []Media {
 		}
 	}
 
-	merge(tr.Legacy.ExtendedEntities.Media)
-	merge(tr.Legacy.Entities.Media)
+	// ExtendedEntities primeiro (normalmente mais completo),
+	// depois Entities como fallback.
+	merge(legacy.ExtendedEntities.Media)
+	merge(legacy.Entities.Media)
 
 	return out
 }

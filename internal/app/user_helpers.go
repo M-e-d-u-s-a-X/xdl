@@ -91,7 +91,6 @@ func resolveUserID(rctx RunContext, conf *config.EssentialsConfig, apiClient *ht
 	if rctx.Mode == ModeDebug {
 		log.LogInfo("user", "["+uid+"]")
 	}
-
 	return uid, nil
 }
 

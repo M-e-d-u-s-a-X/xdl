@@ -6,6 +6,7 @@ import (
 	stdlog "log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
@@ -84,11 +85,12 @@ func fx(level, tag, msg string) {
 }
 
 func BuildRunFolderName(username, userID, runID string) string {
-	base := fmt.Sprintf("%s_%s", username, userID)
+	base := []string{username, runID}
+	basePath := strings.Join(base, "_")
 	if runID == "" {
-		return base
+		return basePath
 	}
-	return fmt.Sprintf("%s_run_%s", base, runID)
+	return fmt.Sprintln(basePath)
 }
 
 func BuildRunLogPath(baseDir, username, userID, runID string) string {
