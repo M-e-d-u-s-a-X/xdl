@@ -1,188 +1,141 @@
-# xdl – X (Twitter) Media Downloader & Scraper (CLI)
+# xdl — X (Twitter) Media Downloader (CLI)
 
-Keywords: twitter media downloader, x scraper, twitter image downloader, twitter video downloader, cli, golang.
+Keywords: x media downloader, twitter media downloader, x scraper, twitter image downloader, twitter video downloader, cli.
 
-[![Go Version](https://img.shields.io/badge/go-1.21%2B-00ADD8.svg)](https://go.dev/)
-[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-success.svg)](#license)
+![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-green)
 
-`xdl` is a **local-first** CLI tool for downloading **images and videos** from X (Twitter) profiles that your logged-in session can see.  
-No hosted API, no accounts, no telemetry — everything runs on your machine.
+`xdl` is a **local-first** CLI that downloads images and videos from **a single X (Twitter) profile** that your logged-in session can see.
 
-> 🛈 xdl **intentionally trades raw speed for quality**.  
-> It always prefers **HQ (high quality) media variants** and uses a more careful request pattern, so downloads may feel slower by design.
+- No hosted API
+- No accounts
+- No telemetry
+- Runs on your machine
 
----
-
-## ⭐ Highlights
-
-- **High-quality media first** – always aims for the best available image/video variants.
-- **Local-only** – runs entirely on your machine, no remote processing.
-- **Uses your existing login** – if your browser session can see it, `xdl` can too.
-- **Cross-platform** – Windows, Linux, macOS.
-- **Simple CLI flow** – one binary, one command, minimal setup.
+> **Quality-first by design:** `xdl` intentionally trades raw speed for higher-quality media variants and more stable behavior.
 
 ---
 
-## 🚀 Quick Start
+## Download (no Go required)
 
-### 1. Install Go
+Prebuilt binaries are published in GitHub **Releases**:
 
-Requires **Go 1.21+**  
-Download from: https://go.dev/dl/
+- **Windows (amd64)**: `xdl-windows-amd64.exe`
+- **Linux (amd64)**: `xdl-linux-amd64`
 
-### 2. Clone & build
+Download the correct file for your OS here:
+- [Releases](https://github.com/m-e-d-u-s-a-x/xdl/releases)
 
-```bash
-# Clone one of the repositories:
-git clone https://github.com/ghostlawless/xdl.git  # GitHub (primary)
-# or
-git clone https://gitlab.com/medusax/xdl           # GitLab (mirror)
+`xdl` ships with **embedded defaults** (no separate `essentials.json` required).
 
-# Enter the project directory:
-cd xdl
+---
 
-# Build
-go build ./cmd/xdl       # Linux / macOS
-go build ./cmd/xdl   # Windows
+## Folder layout
+
+Place the binary in a folder, and keep cookies at `cookies.txt` next to it:
+
+```
+xdl.exe (or xdl-linux-amd64)
+cookies.json
 ```
 
-### 3. Export your cookies
+---
 
-`xdl` uses your existing X login from the browser.
+## Quick start
 
-1. Install the **Cookie-Editor** extension.
-2. Log into `https://x.com` in your browser.
-3. Open Cookie-Editor.
-4. Click **Export → Export as JSON**.
-5. Save the file as:
+### 1) Export cookies
 
-```text
-config/cookies.json
+`xdl` uses your existing X login via browser cookies.
+
+1. Log into X in your browser
+2. Export cookies as **JSON** (for example, using the “Cookie-Editor” extension)
+3. Save the file as:
+
+`cookies.json`
+
+This file is read locally and is not uploaded anywhere by `xdl`.
+
+### 2) Run
+
+### Windows (PowerShell)
+
+(Optional) rename the file to make commands shorter:
+```powershell
+ren .\xdl-windows-amd64.exe xdl.exe
 ```
 
-The file is read locally by `xdl` and is not sent anywhere else.
-
-### 4. Run
-
-```bash
-./xdl USERNAME
+Run:
+```powershell
 .\xdl.exe USERNAME
 ```
 
+### Linux
+
+Make it executable:
+```bash
+chmod +x ./xdl-linux-amd64
+```
+
+Run:
+```bash
+./xdl-linux-amd64 USERNAME
+```
+
 Example:
+```bash
+./xdl-linux-amd64 google
+```
+
+---
+
+## What to expect
+
+- Only content that your session can see will be downloadable.
+- If X stops loading older media in the web UI, results may be limited as well.
+- Slower-than-expected runs are often the intended quality/stability trade-off.
+
+---
+
+## Troubleshooting
+
+### “403” / “Unauthorized” / downloads stop
+- Cookies may be missing, expired, or exported incorrectly.
+- Re-export cookies and confirm the file is exactly at `config/cookies.json`.
+
+### Windows says “not a valid application”
+- The wrong binary was used (e.g., Linux binary on Windows).
+- Download `xdl-windows-amd64.exe` from Releases.
+
+---
+
+## Build from source (optional)
+
+Only needed if you want to modify the code.
 
 ```bash
-xdl lawlessmedusax
+go build ./cmd/xdl
+```
+
+Cross-compile from Linux (Ubuntu):
+
+```bash
+mkdir -p dist
+
+# Linux (amd64)
+env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o dist/xdl-linux-amd64 ./cmd/xdl
+
+# Windows (amd64)
+env CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o dist/xdl-windows-amd64.exe ./cmd/xdl
 ```
 
 ---
 
-## 📁 Output Layout
+## Legal
 
-By default, `xdl` saves files like this:
-
-```text
-exports/
-  USERNAME/
-    images/
-    videos/
-logs/
-debug/
-debug_raw/
-```
-
-- `exports/USERNAME/images/` – downloaded images  
-- `exports/USERNAME/videos/` – downloaded videos  
-- `logs/` and `debug*/` – extra information that can help with troubleshooting
+This project is intended for educational and personal use.
+Users are responsible for complying with X’s Terms of Service and applicable laws.
 
 ---
 
-## 🐢 About speed & HQ mode
+## License
 
-`xdl` is not trying to be the fastest possible downloader.  
-It is designed around a few priorities:
-
-- **Best available quality over “good enough”**  
-- **Stable behavior over short bursts of speed**  
-- **Friendlier request patterns over aggressive scraping**
-
-In practice, this means:
-
-- It may take more time per profile compared to brute-force tools.
-- It is more deliberate when fetching and saving media.
-- The default behavior is tuned around quality, not benchmarks.
-
-If downloads feel slower than expected, that’s usually a **conscious trade-off**, not a performance bug.
-
----
-
-## 📉 Limits imposed by X
-
-`xdl` can only download media that X itself exposes to a logged-in user:
-
-- If the **Media** tab on the site stops loading older posts, `xdl` will also stop seeing new media.
-- Some profiles will only expose a portion of their full historical content through the normal web interface.
-
-In other words:
-
-> If your browser cannot see more media when you scroll to the bottom, `xdl` will not magically find more either.
-
-This is a limitation of the platform, not of the tool.
-
----
-
-## 🔐 Privacy
-
-- No telemetry  
-- No analytics  
-- No external services  
-
-Network traffic is only between **your machine and X**, using your cookies.  
-Everything else happens locally.
-
----
-
-## ⚖️ Legal
-
-This project is intended for **educational and personal use**.
-
-You are responsible for:
-
-- Respecting X’s Terms of Service  
-- Respecting copyrights and local laws  
-- Only downloading content you are allowed to access and store  
-
-The authors and contributors are **not** responsible for misuse.
-
----
-
-## 🤝 Contributing
-
-Suggestions, issues, and pull requests are welcome.
-
-When reporting a problem, it helps to include:
-
-- OS (Windows / Linux / macOS)
-- Go version
-- Command you ran (`xdl ...`)
-- A short description of what happened
-- Relevant snippets from `logs/` (you can redact usernames/paths)
-
----
-
-## 📜 License
-
-**AGPL-3.0**
-
-You can:
-
-- Fork  
-- Study  
-- Modify  
-- Contribute  
-
-as long as you follow the terms of the AGPL-3.0 license.
-
----
-
-### xdl — local-first, quality-focused media downloader for X.
+AGPL-3.0
