@@ -19,7 +19,7 @@ import (
 
 type Media struct {
 	URL     string `json:"url"`
-	Type    string `json:"type"` // "image" or "video"
+	Type    string `json:"type"`
 	TweetID string `json:"tweet_id,omitempty"`
 }
 

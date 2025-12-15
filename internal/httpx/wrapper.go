@@ -67,8 +67,6 @@ func DoRequest(ctx context.Context, client *http.Client, opt RequestOptionsRunti
 	if err != nil {
 		return nil, err
 	}
-
-	// Headers.
 	for k, vals := range opt.Headers {
 		for _, v := range vals {
 			req.Header.Add(k, v)
