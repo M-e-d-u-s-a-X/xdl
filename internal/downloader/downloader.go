@@ -109,7 +109,8 @@ func DownloadAllCycles(cl *http.Client, cf *config.EssentialsConfig, ms []scrape
 	}
 	bs := opt.BatchSize
 	if bs <= 0 {
-		bs = cc * 2
+		// One pool per call: fixed batches stall on their slowest file.
+		bs = len(it)
 	}
 
 	pd := make([]item, len(it))
@@ -288,7 +289,7 @@ func doOne(cl *http.Client, cf *config.EssentialsConfig, it item, ds bins, opt O
 	if err != nil {
 		return result{err: err}
 	}
-	cf.BuildRequestHeaders(req, cf.X.Network)
+	cf.BuildMediaHeaders(req, cf.X.Network)
 	req.Header.Set("Accept", "*/*")
 	at := opt.Attempts
 	if at <= 0 {

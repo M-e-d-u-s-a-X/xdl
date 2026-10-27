@@ -36,6 +36,7 @@ func runWithContext(r0 RunContext) error {
 	}
 
 	if r0.Mode == ModeDebug {
+		c0.Runtime.DebugEnabled = true
 		c0.Paths.Debug = r0.LogPath
 		c0.Paths.DebugRaw = r0.LogPath
 	}
@@ -119,9 +120,7 @@ func runSingleUser(r0 RunContext, c0 *config.EssentialsConfig, h0, h1 *http.Clie
 	}
 
 	s0 := newSpinnerForUser(r0, u0)
-	if s0 != nil {
-		defer stopSpinner(s0)
-	}
+	defer func() { stopSpinner(s0) }()
 
 	d0, e0 := prepareRunOutputDir(r0, c0, u0, s0)
 	if e0 != nil {
@@ -129,6 +128,8 @@ func runSingleUser(r0 RunContext, c0 *config.EssentialsConfig, h0, h1 *http.Clie
 	}
 
 	i0, e1 := resolveUserID(r0, c0, h0, u0, s0)
+	stopSpinner(s0)
+	s0 = nil
 	if e1 != nil {
 		return e1
 	}

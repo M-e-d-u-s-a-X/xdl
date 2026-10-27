@@ -37,9 +37,18 @@ func EnrichMediaWithTweetDetail(
 		return medias
 	}
 
+	// UserMedia already carries full-quality image URLs and video variants, so
+	// only tweets with a video that did not resolve to an mp4 need TweetDetail.
+	needDetail := make(map[string]bool)
+	for _, m := range medias {
+		if m.TweetID != "" && m.Type == "video" && !strings.Contains(m.URL, "video.twimg.com") {
+			needDetail[m.TweetID] = true
+		}
+	}
+
 	tweetIndex := make(map[string][]int)
 	for i, m := range medias {
-		if m.TweetID == "" {
+		if !needDetail[m.TweetID] {
 			continue
 		}
 		tweetIndex[m.TweetID] = append(tweetIndex[m.TweetID], i)

@@ -220,6 +220,22 @@ func (c *EssentialsConfig) BuildRequestHeaders(req *http.Request, ref string) {
 	c.applyCookieHeader(req)
 }
 
+// BuildMediaHeaders is for CDN (twimg.com) downloads: no cookies, bearer or csrf token.
+func (c *EssentialsConfig) BuildMediaHeaders(req *http.Request, ref string) {
+	if c == nil || req == nil {
+		return
+	}
+	for key, value := range c.Headers {
+		switch strings.ToLower(key) {
+		case "user-agent", "accept-language":
+			if value != "" {
+				req.Header.Set(key, value)
+			}
+		}
+	}
+	c.applyRefererHeader(req, ref)
+}
+
 func (c *EssentialsConfig) applyConfiguredHeaders(req *http.Request) {
 	for key, value := range c.Headers {
 		if value == "" {

@@ -14,7 +14,10 @@ import (
 	"github.com/ghostlawless/xdl/internal/utils"
 )
 
-func newSpinnerForUser(_ RunContext, label string) *spinner {
+func newSpinnerForUser(r0 RunContext, label string) *spinner {
+	if r0.Mode != ModeVerbose {
+		return nil
+	}
 	return startSpinner(label)
 }
 
